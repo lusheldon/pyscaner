@@ -42,28 +42,44 @@ def pyscaner():
             if endPort>startPort and endPort<65535:
                 pass
             else:
-                usage("end port out of range")
+                raise "end port out of range"
         else:
             usage("wrong port arguments")
     except:
-        usage("Wrong arguments")
-    startHost,endHost = parseHost(host, mask)
-    print startHost,endHost
-    if re.match(pattern, startHost):
-        pass
-    else:
-        usage("startHost parse error")
-    scaner(startHost, endHost, startPort, endPort)
+        raise "Wrong arguments"
+    # startHost,endHost = parseHost(host, mask)
+    # print startHost,endHost
+    # if re.match(pattern, startHost):
+        # pass
+    # else:
+        # usage("startHost parse error")
+    scaner(host,mask,start,endPort)
 def usage(str):
     print "Please input the correct parameters!"+str
     exit()
-def scaner(startHost, endHost, startPort, endPort):
+def scaner(host, mask, startPort, endPort):
     print "Scanning started!"
-    for 
-    # probe if the host alive
+    ipDecRange=ipRange(ipToDec(host),mask)
+    for ipDec in ipDecRange:
+        # probe if the host alive
+        ip=ipDectoStr(ipDec)
+        if ipAlive(ip):
+            for port in xrange(startPort, endPort):
+                tcpConnect(ip,port)
+def ipDectoStr(ipDec):
+    ipList[0]=ipDec>>24
+    ipList[1]=(ipDec-(ipList[0]<<24))>>16
+    ipList[2]=(ipDec-(ipList[0]<<24)-(ipList[1]<<16))>>8
+    ipList[3]=ipDec-(ipList[0]<<24)-(ipList[1]<<16)-ipList[2]<<8
+    return '.'.join(ipList)
+def ipAlive(ip):
     
+    return True
 
+def tcpConnect(ip,port):
+    return True
 #turn the host/mask into startHost and endHost
+"""
 def parseHost(host, mask):
     if mask==32:
         return (host,host)
@@ -99,6 +115,13 @@ def parseHost(host, mask):
         h[i]=str(h[i])
         h_tmp[i]=str(h_tmp[i])
     return ('.'.join(h),'.'.join(h_tmp))
-    
+"""
+def ipRange(ipDec,mask):
+    startIpDec=(ipDec&((1<<mask)-1<<(32-mask)))
+    endIpDec=(ipDec&((1<<mask)-1<<(32-mask)))+(1<<(32-mask))-1
+    return xrange(startIpDec,endIpDec)
+def ipToDec(ipstr):
+    ipList=ipstr.split('.')
+    return (ipList[0]<<24)+(ipList[1]<<16)+(ipList[2]<<8)+ipList
 if __name__=="__main__":
     pyscaner()
