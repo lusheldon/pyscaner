@@ -59,6 +59,8 @@ def usage(str):
     exit()
 def scaner(startHost, endHost, startPort, endPort):
     print "Scanning started!"
+    for 
+    # probe if the host alive
     
 
 #turn the host/mask into startHost and endHost
@@ -66,37 +68,33 @@ def parseHost(host, mask):
     if mask==32:
         return (host,host)
     h=host.split('.')
-    h_tmp=h
+    h_tmp=host.split('.')
     p=mask/8
     q=mask%8
-    print h
-    print p,q,h[p-1]
     for n in range(128):
-        if int(h[p-1])>=int(n*256/math.pow(2,q)) and int(h[p-1])<int((n+1)*256/math.pow(2,q)):
+        if int(h[p])>=int(n*256/math.pow(2,q)) and int(h[p])<int((n+1)*256/math.pow(2,q)):
             flag = int(256/math.pow(2,q)*n)
             interval = int(256/math.pow(2,q))
             break
         else:
             pass
-    print flag, interval
     if p<3:
-        for i in range(3):
-            if i<p-1:
-                pass
-            elif i==p-1:
+        i=0
+        while i<4:
+            if i==p:
                 h[i] = flag
-                h_tmp[i] = flag+interval-1
-                
-            else:
+                h_tmp[i] = flag+interval-1   
+            elif i>p:
                 h[i] = 0
-                h_tmp[i] = 0
+                h_tmp[i] = 255
                 h[3] = 1
                 h_tmp[3] = 254
+            else:
+                pass
+            i+=1
     else:
-        h_tmp=h
         h[3]=flag+1
-        h_tmp[3]=flag+interval-1
-    print h,h_tmp
+        h_tmp[3]=flag+interval-2
     for i in range(4):
         h[i]=str(h[i])
         h_tmp[i]=str(h_tmp[i])
