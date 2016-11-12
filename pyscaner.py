@@ -1,84 +1,99 @@
 #!/usr/bin/python
 import sys, socket, time, struct, select, os, re, math
 
+
 def pyscaner():
     target = []
     port = []
-    if len(sys.argv)==3:
+    if len(sys.argv) == 3:
         target = sys.argv[1].split('/')
         port = sys.argv[2].split('-')
     else:
         print sys.argv
         usage("argv")
     # parse the host and mask
-    
+
     host = target[0]
-    pattern = r"\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
+    pattern = (r"\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+               r"\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b")
     if re.match(pattern, host):
         pass
     else:
-        usage("ip not illeage")
+        usage("ip not illegal")
     try:
-        if len(target)==1:
+        if len(target) == 1:
             mask = 32
-        elif len(target)==2:
+        elif len(target) == 2:
             mask = int(target[1])
-            if mask>0 and mask<33:
+            if 0 < mask < 33:
                 pass
             else:
                 usage("mask out bound")
         else:
             usage("need two arguments")
-        #parse the startPort and endPort
-        startPort = int(port[0])
-        if startPort>0 and startPort<65535:
+        # parse the start_port and end_port
+        start_port = int(port[0])
+        if 0 < start_port < 65535:
             pass
         else:
             usage("start port out of range")
-        if len(port)==1:
-            endPort = int(port[0])
-        elif len(port)==2:
-            endPort = int(port[1])
-            if endPort>startPort and endPort<65535:
+        if len(port) == 1:
+            end_port = int(port[0])
+        elif len(port) == 2:
+            end_port = int(port[1])
+            if start_port < end_port < 65535:
                 pass
             else:
-                raise "end port out of range"
+                usage("end port out of range")
         else:
             usage("wrong port arguments")
     except:
-        raise "Wrong arguments"
-    # startHost,endHost = parseHost(host, mask)
-    # print startHost,endHost
-    # if re.match(pattern, startHost):
+        raise TypeError("Wrong arguments")
+        # startHost,endHost = parseHost(host, mask)
+        # print startHost,endHost
+        # if re.match(pattern, startHost):
         # pass
-    # else:
+        # else:
         # usage("startHost parse error")
-    scaner(host,mask,start,endPort)
-def usage(str):
-    print "Please input the correct parameters!"+str
+    scaner(host, mask, start_port, end_port)
+
+
+def usage(msg):
+    print "Please input the correct parameters!" + msg
     exit()
-def scaner(host, mask, startPort, endPort):
+
+
+def scaner(host, mask, start_port, end_port):
     print "Scanning started!"
-    ipDecRange=ipRange(ipToDec(host),mask)
-    for ipDec in ipDecRange:
+    ip_dec_range = get_ip_range(ip_to_dec(host), mask)
+    for ipDec in ip_dec_range:
         # probe if the host alive
-        ip=ipDectoStr(ipDec)
-        if ipAlive(ip):
-            for port in xrange(startPort, endPort):
-                tcpConnect(ip,port)
-def ipDectoStr(ipDec):
-    ipList[0]=ipDec>>24
-    ipList[1]=(ipDec-(ipList[0]<<24))>>16
-    ipList[2]=(ipDec-(ipList[0]<<24)-(ipList[1]<<16))>>8
-    ipList[3]=ipDec-(ipList[0]<<24)-(ipList[1]<<16)-ipList[2]<<8
-    return '.'.join(ipList)
-def ipAlive(ip):
-    
+        ip = ip_dec_to_str(ipDec)
+        print ipDec,ip
+        if ip_is_alive(ip):
+            for port in xrange(start_port, end_port):
+                tcp_connect(ip, port)
+
+
+def ip_dec_to_str(ip_dec):
+    ipp1 = ip_dec >> 24
+    ipp2 = (ip_dec - (ipp1 << 24)) >> 16
+    ipp3 = (ip_dec - (ipp1 << 24) - (ipp2 << 16)) >> 8
+    ipp4 = ip_dec - (ipp1 << 24) - (ipp2 << 16) - (ipp3 << 8)
+    ipp = [ipp1 % 256 + ipp1 / 256, ipp2 % 256 + ipp2 / 256, ipp3 % 256 + ipp3 / 256, ipp4 % 256 + ipp4 / 256]
+    ipp = [str(i) for i in ipp]
+    return '.'.join(ipp)
+
+
+def ip_is_alive(ip):
     return True
 
-def tcpConnect(ip,port):
+
+def tcp_connect(ip, port):
     return True
-#turn the host/mask into startHost and endHost
+
+
+# turn the host/mask into startHost and endHost
 """
 def parseHost(host, mask):
     if mask==32:
@@ -99,7 +114,7 @@ def parseHost(host, mask):
         while i<4:
             if i==p:
                 h[i] = flag
-                h_tmp[i] = flag+interval-1   
+                h_tmp[i] = flag+interval-1
             elif i>p:
                 h[i] = 0
                 h_tmp[i] = 255
@@ -116,12 +131,19 @@ def parseHost(host, mask):
         h_tmp[i]=str(h_tmp[i])
     return ('.'.join(h),'.'.join(h_tmp))
 """
-def ipRange(ipDec,mask):
-    startIpDec=(ipDec&((1<<mask)-1<<(32-mask)))
-    endIpDec=(ipDec&((1<<mask)-1<<(32-mask)))+(1<<(32-mask))-1
-    return xrange(startIpDec,endIpDec)
-def ipToDec(ipstr):
-    ipList=ipstr.split('.')
-    return (ipList[0]<<24)+(ipList[1]<<16)+(ipList[2]<<8)+ipList
-if __name__=="__main__":
+
+
+def get_ip_range(ip_dec, mask):
+    start_ip_dec = (ip_dec & ((1 << mask) - 1 << (32 - mask))) + 1
+    end_ip_dec = (ip_dec & ((1 << mask) - 1 << (32 - mask))) + (1 << (32 - mask)) - 1
+    return xrange(start_ip_dec, end_ip_dec)
+
+
+def ip_to_dec(ip):
+    ip_array = ip.split('.')
+    ip_array = [int(x) for x in ip_array]
+    return (ip_array[0] << 24) + (ip_array[1] << 16) + (ip_array[2] << 8) + ip_array[3]
+
+
+if __name__ == "__main__":
     pyscaner()
