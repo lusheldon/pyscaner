@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import sys, socket, time, struct, select, os, re, math
-
+import pyping
 
 def pyscaner():
     target = []
@@ -65,15 +65,22 @@ def usage(msg):
 
 def scaner(host, mask, start_port, end_port):
     print "Scanning started!"
-    ip_dec_range = get_ip_range(ip_to_dec(host), mask)
+    ip_dec = ip_to_dec(host)
+    start_ip_dec = (ip_dec & ((1 << mask) - 1 << (32 - mask))) + 1
+    end_ip_dec = (ip_dec & ((1 << mask) - 1 << (32 - mask))) + (1 << (32 - mask)) - 1
+    # To avoid overflowerror int too large to convert long
+    diff_value = end_ip_dec - start_ip_dec
+    ip_dec_range = xrange(0, diff_value)
     for ipDec in ip_dec_range:
         # probe if the host alive
-        ip = ip_dec_to_str(ipDec)
-        print ipDec,ip
-        if ip_is_alive(ip):
-            for port in xrange(start_port, end_port):
+        ip = ip_dec_to_str(ipDec+start_ip_dec)
+        # print ipDec,ip
+        if pyping.probe(ip):
+            for port in xrange(start_port, end_port+1):
                 tcp_connect(ip, port)
-
+        else:
+            pass# print ip, "is not alive, skipped!"
+		
 
 def ip_dec_to_str(ip_dec):
     ipp1 = ip_dec >> 24
@@ -85,12 +92,20 @@ def ip_dec_to_str(ip_dec):
     return '.'.join(ipp)
 
 
-def ip_is_alive(ip):
-    return True
-
-
 def tcp_connect(ip, port):
-    return True
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(1)
+    #sock.setsockopt(socket.SOL_SOCKet, socket.SO_REUSEPORT, 1)
+    # print "try to connect"
+    try:
+        sock.connect((ip,port))
+        print "detected opened port", ip, port
+        return True
+    except socket.error, e:
+        # print "Error+: ", e
+        return False
+    finally:
+        sock.close()
 
 
 # turn the host/mask into startHost and endHost
@@ -131,14 +146,6 @@ def parseHost(host, mask):
         h_tmp[i]=str(h_tmp[i])
     return ('.'.join(h),'.'.join(h_tmp))
 """
-
-
-def get_ip_range(ip_dec, mask):
-    start_ip_dec = (ip_dec & ((1 << mask) - 1 << (32 - mask))) + 1
-    end_ip_dec = (ip_dec & ((1 << mask) - 1 << (32 - mask))) + (1 << (32 - mask)) - 1
-    return xrange(start_ip_dec, end_ip_dec)
-
-
 def ip_to_dec(ip):
     ip_array = ip.split('.')
     ip_array = [int(x) for x in ip_array]
