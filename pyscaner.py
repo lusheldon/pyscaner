@@ -1,7 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 __author__ = 'Sheldon'
-import sys, re, threading, socket, pyping
+import sys, re, threading, socket, pyping, threading, time
+
+threads = []
 
 def usage(str):
 	print str + "\n"
@@ -120,10 +122,20 @@ def do_scan(target, port):
 		# print ip_dec
 		ip = ip_dec_to_str(ip_dec)
 		ping.dest = ip
-		# if ping.probe():
-		for p in port_range:
-			tcp_connect(ip, p)
+		if ping.probe():
+			# for p in port_range:
+			# tcp_connect(ip, p)
+			t = threading.Thread(target=scan, args=(ip, port_range, ))
+			threads.append(t)
+		else:
+			pass
 	
+
+def scan(ip, port_range):
+	for i in port_range:
+		tcp_connect(ip, i)
+
+		
 def tcp_connect(ip, port):
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	sock.settimeout(1)
@@ -142,3 +154,7 @@ def tcp_connect(ip, port):
 	
 if __name__=="__main__":
 	argpase()
+	for t in threads:
+		t.setDaemon(True)
+		t.start()
+	t.join()
